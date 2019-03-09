@@ -26,5 +26,6 @@ Connection to 127.0.0.1 7000 port [tcp/afs3-fileserver] succeeded!
 ```
 
 - You can check it in your navigator and you shoud watch some like:
-![cloudy][images/home.png]
+
+![cloudy](images/home.png)
 
