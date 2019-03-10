@@ -6,15 +6,15 @@ Firstly, I'm going to describe what is cloudy, [Cloudy](http://cloudy.community/
 
 Cloudy use [Serf](https://www.serf.io/)  in order to add or delete nodes from Cloudy.
 
-# What am I going to do? 
+# What am I going to do?
 
 - Transform 4 raspberrys pi on Cloudy distro [Cloudyning](https://github.com/Clommunity/cloudynitzar) these.
-- Use 1 raspberry as Bootsrap Server.
+- Use 1 raspberry as Bootstrap Server.
 - Join the other raspberrys to cluster.
 - Check the resilence.
-- Expose services and watch how Serf through [gossip](https://www.serf.io/docs/internals/gossip.html) will be able to communicate the changes to other nodes. 
+- Expose services and watch how Serf through [gossip](https://www.serf.io/docs/internals/gossip.html) will be able to communicate the changes to other nodes.
 
-# Let's do it 
+# Let's do it
 ## 1- Cloudynizing raspberrys:
 ```sh
 sudo apt-get update; sudo apt-get install -y curl lsb-release
@@ -26,15 +26,15 @@ cloudy:~$ nc -zv 127.0.0.1 7000
 Connection to 127.0.0.1 7000 port [tcp/afs3-fileserver] succeeded!
 ```
 
-- You can check it in your navigator and you shoud watch something like:
+- You can check it in your navigator and you should watch something like:
 
 ![cloudy](images/home.png)
 
 ## 2- Playing with Serf
 
-As I said before, Cloudy use Serf in order to get Failure detection, Service Discovery with Gossip and Custom Events.
+As I said before, Cloudy uses Serf in order to get Failure detection, Service Discovery with Gossip and Custom Events.
 
-- Firs of all, I put the first member of the cluster as Bootsrap Server.
+- First of all, I put the first member of the cluster as Bootsrap Server.
 
 ```sh
 pi@raspberrypi:~ $ serf agent -bind=192.168.1.141
@@ -98,7 +98,7 @@ raspberrypi  192.168.1.141:7946  alive
 raspberry-1  192.168.1.140:7946  alive
 ```
 
-- I added the last one: 
+- I added the last one:
 
 ```sh
 pi@raspberrypi:~ $ serf members
@@ -107,7 +107,7 @@ raspberry-1  192.168.1.140:7946  alive
 raspberry-1  192.168.1.143:7946  alive
 ```
 
-Before to start to add services I want to test the cluster's resilence.
+Before to start to add services I want to test the cluster's resilience.
 
 - I'm going to stop the node which role is bootstrap server.
 
@@ -210,7 +210,7 @@ raspberry-1  192.168.1.140:7946  alive  services=QlpoOTFBWSZTWWfzP3wAAEdfgAAQEAd
 raspberrypi  192.168.1.141:7946  alive  services=QlpoOTFBWSZTWYyBIrAAACDfgAAQEAU3cAABTQq/p98qIAB0KmamNQAaA00NGmj1CE1DTTTIDTQD1BoCxgGvU1qSGcNuDVCWkQR6RLEbmWzg5wpel4RESCEcNtwe0nBHN0TiZsGXyr89gMVvEZjdByRAu5E6UKOTFfEn8XckU4UJCMgSKwA=
 ```
 
-- The tag is encrypted in base64, I can see what is happening with:
+- The tag is encoded in base64, I can see what is happening with:
 
 ```sh
 echo "QlpoOTFBWSZTWRYvUqQAAEdfgAAQEAd3cAIBTQq/p98qIACSCVRoeoCYmTAmRtEw1PQShUyaY1DTQNqaPUzSYmmnXgnO/e1xezicmSBlE+ZLGRaCSZCoQU/DDOpQTXU8HcsFOI8ePFCctNpabGGFGERwQugEVgjhuuvV4YZmrB2IPvJcWD50fz1CwQ/Qk0ZwPGw1QhSKIxahHWlaFzd0OxdyRThQkBYvUqQ="|base64 -d - |bunzip2 -
@@ -221,11 +221,10 @@ echo "QlpoOTFBWSZTWRYvUqQAAEdfgAAQEAd3cAIBTQq/p98qIACSCVRoeoCYmTAmRtEw1PQShUyaY1
 
 ![test](images/test_service.png)
 
-- I want to comment that you could expose services from Cloudy console but there are really limited.
+- I want to comment that you can expose services from Cloudy console but it is really limited.
 
 # Conclusion:
 
-At this point, I can say that Cloudy and Serf works very well together, with Serf we have decentralized cluster membership, failure detection, and orchestration, and Cloudy is a little wrapper who is making easier our life.
+At this point, I can say that Cloudy and Serf works very well together. With Serf we have a decentralized cluster membership, added failure detection and orchestration. Cloudy is a little wrapper who is making easier our life.
 
-On the other hand, currently Cloudy doesn't have a huge list of services so, you should to use terminal in order to add more services to your microcloud or your community cloud.
-
+On the other hand, currently Cloudy doesn't have a huge list of services, so you should use the console in order to add more services to your microcloud or your community cloud.
