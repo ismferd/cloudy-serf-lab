@@ -11,6 +11,7 @@ Cloudy use [Serf](https://www.serf.io/)  in order to add or delete nodes from Cl
 - Transform 4 raspberrys pi on Cloudy distro [Cloudyning](https://github.com/Clommunity/cloudynitzar) these.
 - Use 1 raspberry as Bootsrap Server.
 - Join the other raspberrys to cluster.
+- Check the resilence.
 - Expose services from raspberrys and watch how Serf through [gossip](https://www.serf.io/docs/internals/gossip.html) will be able to communicate changes to other nodes. 
 
 # Let's do it 
@@ -97,7 +98,7 @@ raspberrypi  192.168.1.141:7946  alive
 raspberry-1  192.168.1.140:7946  alive
 ```
 
-I have added another one:
+I added the last one: 
 
 ```sh
 pi@raspberrypi:~ $ serf members
@@ -105,6 +106,53 @@ raspberrypi  192.168.1.141:7946  alive
 raspberry-1  192.168.1.140:7946  alive
 raspberry-1  192.168.1.143:7946  alive
 ```
+
+Before to start to add services I want to test the cluster's resilence.
+
+I'm going to stop the node which role is bootstrap server.
+
+```sh
+    2019/03/10 09:50:30 [INFO] agent: Received event: member-update
+^C==> Caught signal: interrupt
+==> Gracefully shutting down agent...
+    2019/03/10 09:59:41 [INFO] agent: requesting graceful leave from Serf
+    2019/03/10 09:59:42 [INFO] serf: EventMemberLeave: raspberrypi 192.168.1.141
+    2019/03/10 09:59:42 [INFO] agent: requesting serf shutdown
+    2019/03/10 09:59:42 [INFO] agent: shutdown complete
+```
+On the other nodes I can see how the node has sent a new event "member-leave".
+
+```sh
+    2019/03/10 09:59:42 [INFO] serf: EventMemberLeave: raspberrypi 192.168.1.141
+    2019/03/10 09:59:43 [INFO] agent: Received event: member-leave
+```
+
+Watching members:
+
+```sh
+pi@raspberry-1:~ $ serf members
+raspberrypi  192.168.1.141:7946  left
+raspberry-1  192.168.1.140:7946  alive
+raspberry-1  192.168.1.143:7946  alive
+```
+
+Then I'm going to add the node to whoever 2 nodes in status alive.
+
+```sh
+pi@raspberrypi:~ $ serf agent -bind=192.168.1.141 -join 192.168.1.140
+```
+
+```sh
+pi@raspberry-1:~ $ serf members
+raspberrypi  192.168.1.141:7946  alive
+raspberrypi  192.168.1.140:7946  alive
+raspberrypi  192.168.1.143:7946  alive
+```
+
+**AWESOME:** While a node is keeping alive, you can add as nodes as you want.
+
+
+## 3- Expoxing services through Serf and Cloudy
 
 Thanks to Cloudy and using [avahi-ps script](https://github.com/Clommunity/avahi-ps/blob/master/avahi-ps) I can publish or unpublish service through Serf really easy:
 
@@ -135,4 +183,45 @@ Examples:
    /usr/sbin/avahi-ps info <variable>
        <variable>: ip|cloud|tincdev|communitydev
 ```
+
+This script is calling to [avahi-ps-serf](https://github.com/Clommunity/package-serf/blob/master/usr/share/avahi-ps/plugs/avahi-ps-serf) [adding, searching and deleting tags](https://www.serf.io/docs/commands/tags.html), it's how Cloudy exposes and propagate services to other nodes.
+
+I'm going to publish a new service called TEST:
+
+```sh
+pi@raspberry-1:/etc/init.d $ /usr/sbin/avahi-ps publish TEST TEST TEST TEST
+Successfully updated agent tags
+```
+
+Cluster gets the new event:
+
+```sh
+2019/03/10 11:13:22 [INFO] serf: EventMemberUpdate: raspberry-1
+2019/03/10 11:13:23 [INFO] agent: Received event: member-update
+```
+
+and now the command `serf members` looks like:
+
+```sh
+pi@raspberry-1:/etc/init.d $ serf members
+raspberry-2  192.168.1.143:7946  alive  services=QlpoOTFBWSZTWfn5OQ0AABtfgAAQEAcTEAABTQq/p98qIABBEaTNTRoADT1GgxDGExNBgjEMjCZc1Bt4MgWb/IGXhWoBMhGpCJZOxzBYAGrzVDafCo5vimkNvb+qPpelFkCc0O1dTFl4tMWJnkyU1/i7kinChIfPycho
+raspberry-1  192.168.1.140:7946  alive  services=QlpoOTFBWSZTWWfzP3wAAEdfgAAQEAd3cAIBTQq/p98qIACSCVU2h6kwATAQbII9T0EoVNGmT0jIaNqabQE0MU807XzNcXs4kI0gZ4GWa4RLKRRoTiCmgw0rlBNdT0eSoU6Dx48UJCs4FZuYYUYRHBC6AMWCdjhdrHxp6GNHu4fPpgXEB+P54iaIbxE0ZyPmw5QhUKIxahHnFqGG7kOhdyRThQkGfzP3wA==
+raspberrypi  192.168.1.141:7946  alive  services=QlpoOTFBWSZTWYyBIrAAACDfgAAQEAU3cAABTQq/p98qIAB0KmamNQAaA00NGmj1CE1DTTTIDTQD1BoCxgGvU1qSGcNuDVCWkQR6RLEbmWzg5wpel4RESCEcNtwe0nBHN0TiZsGXyr89gMVvEZjdByRAu5E6UKOTFfEn8XckU4UJCMgSKwA=
+```
+
+The tag is encrypted in base64, I can see what is happening with:
+
+```sh
+echo "QlpoOTFBWSZTWRYvUqQAAEdfgAAQEAd3cAIBTQq/p98qIACSCVRoeoCYmTAmRtEw1PQShUyaY1DTQNqaPUzSYmmnXgnO/e1xezicmSBlE+ZLGRaCSZCoQU/DDOpQTXU8HcsFOI8ePFCctNpabGGFGERwQugEVgjhuuvV4YZmrB2IPvJcWD50fz1CwQ/Qk0ZwPGw1QhSKIxahHWlaFzd0OxdyRThQkBYvUqQ="|base64 -d - |bunzip2 -
+[{"s":"TEST","d":"TEST","m":"raspberry-1.guifi.local","i":"192.168.1.140","p":"TEST","e":"","t":"TEST"},{"s":"tincvpn","d":"TincVPN_System","m":"raspberry-1.guifi.local","i":"192.168.1.140","p":"665","e":"","t":""}]
+```
+
+Or easier than before, I can check services exposed from Cloudy:
+!(test_)[images/test__service.png]
+
+- I want to comment that you could expose services from Cloudy console but these are really limited.
+
+# Conclusio:
+
+At this point, I can say that Cloudy and Serf works very well together, with Serf we will have decentralized cluster membership, failure detection, and orchestration, and Cloudy is a little wrapper who is making easier our life.
 
