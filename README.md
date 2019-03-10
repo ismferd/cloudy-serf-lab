@@ -218,7 +218,7 @@ echo "QlpoOTFBWSZTWRYvUqQAAEdfgAAQEAd3cAIBTQq/p98qIACSCVRoeoCYmTAmRtEw1PQShUyaY1
 ```
 
 - Or easier than before, I can check services exposed from Cloudy:
-!(test_)[images/test__service.png]
+!(test_)[images/test_service.png]
 
 - I want to comment that you could expose services from Cloudy console but there are really limited.
 
