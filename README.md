@@ -1,4 +1,4 @@
-# cloudylab-serf
+# Cloudy-Serf-Lab
 
 Firstly, I'm going to describe what is cloudy, [Cloudy](http://cloudy.community/) is a distribution based on Debian GNU/Linux, aimed at end users, to foster the transition and adoption of the Community Network cloud environment.
 
